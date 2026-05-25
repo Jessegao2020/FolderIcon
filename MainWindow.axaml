@@ -13,12 +13,12 @@
     </Grid>
 
     <TextBox Grid.Row="1" Name="FolderPathBox" Height="96" TextWrapping="Wrap" AcceptsReturn="True" VerticalContentAlignment="Top"
-             TextChanged="OnFolderPathTextChanged" DragDrop.AllowDrop="True" Drop="OnFolderPathDrop" DragOver="OnFolderPathDragOver"/>
+             TextChanged="OnFolderPathTextChanged" DragDrop.AllowDrop="True" DragDrop.Drop="OnFolderPathDrop" DragDrop.DragOver="OnFolderPathDragOver"/>
 
     <TextBlock Grid.Row="2" Text="Drag and drop your image here:" FontSize="20" Margin="0,18,0,8" HorizontalAlignment="Center" />
 
     <Border Grid.Row="3" Background="#FFC0FFFF" BorderBrush="#33000000" BorderThickness="1" CornerRadius="4"
-            DragDrop.AllowDrop="True" Drop="OnImageDrop" DragOver="OnImageDragOver">
+            DragDrop.AllowDrop="True" DragDrop.Drop="OnImageDrop" DragDrop.DragOver="OnImageDragOver">
       <Image Name="PreviewImage" Stretch="Uniform" Margin="6" />
     </Border>
 
