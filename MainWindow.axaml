@@ -1,0 +1,30 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="FolderIcon.MainWindow"
+        Width="519" Height="627"
+        CanResize="False"
+        Title="FolderIcon"
+        Background="#FFF5F7FA">
+  <Grid Margin="20" RowDefinitions="Auto,Auto,Auto,*,Auto" ColumnDefinitions="*">
+    <Grid Row="0" Column="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,8">
+      <TextBlock Text="Select Folder:" FontWeight="Bold" VerticalAlignment="Center" />
+      <Button Grid.Column="1" Name="ClearButton" Content="Clear" Width="100" Margin="8,0,0,0" Click="OnClearFolder" />
+      <Button Grid.Column="2" Name="AddButton" Content="Add" Width="100" Margin="8,0,0,0" Click="OnAddFolder" />
+    </Grid>
+
+    <TextBox Row="1" Name="FolderPathBox" Height="96" TextWrapping="Wrap" AcceptsReturn="True" VerticalContentAlignment="Top"
+             TextChanged="OnFolderPathTextChanged" AllowDrop="True" DragDrop="OnFolderPathDrop" DragOver="OnFolderPathDragOver"/>
+
+    <TextBlock Row="2" Text="Drag and drop your image here:" FontSize="20" Margin="0,18,0,8" HorizontalAlignment="Center" />
+
+    <Border Row="3" Background="#FFC0FFFF" BorderBrush="#33000000" BorderThickness="1" CornerRadius="4"
+            AllowDrop="True" DragDrop="OnImageDrop" DragOver="OnImageDragOver">
+      <Image Name="PreviewImage" Stretch="Uniform" Margin="6" />
+    </Border>
+
+    <Grid Row="4" ColumnDefinitions="Auto,*" Margin="0,16,0,0">
+      <Button Name="RestoreButton" Content="Restore" Background="#FFC0C0FF" Width="90" Height="49" Click="OnRestore" />
+      <Button Grid.Column="1" Name="FinishButton" Content="Finish" Height="49" Margin="8,0,0,0" Click="OnFinish" FontSize="20" />
+    </Grid>
+  </Grid>
+</Window>
