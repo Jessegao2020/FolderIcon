@@ -4,8 +4,9 @@
         Width="519" Height="627"
         CanResize="False"
         Title="FolderIcon"
-        Background="#FFF5F7FA">
-  <Grid Margin="20" RowDefinitions="Auto,Auto,Auto,*,Auto" ColumnDefinitions="*">
+        Background="#FFF5F7FA"
+        DragDrop.AllowDrop="True">
+  <Grid Name="RootGrid" Margin="20" RowDefinitions="Auto,Auto,Auto,*,Auto" ColumnDefinitions="*" DragDrop.AllowDrop="True">
     <Grid Grid.Row="0" Grid.Column="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,8">
       <TextBlock Text="Select Folder:" FontWeight="Bold" VerticalAlignment="Center" />
       <Button Grid.Column="1" Name="ClearButton" Content="Clear" Width="100" Margin="8,0,0,0" Click="OnClearFolder" />
@@ -13,12 +14,12 @@
     </Grid>
 
     <TextBox Grid.Row="1" Name="FolderPathBox" Height="96" TextWrapping="Wrap" AcceptsReturn="True" VerticalContentAlignment="Top"
-             TextChanged="OnFolderPathTextChanged"/>
+             TextChanged="OnFolderPathTextChanged" DragDrop.AllowDrop="True"/>
 
     <TextBlock Grid.Row="2" Text="Drag and drop your image here:" FontSize="20" Margin="0,18,0,8" HorizontalAlignment="Center" />
 
-    <Border Grid.Row="3" Name="ImageDropBorder" Background="#FFC0FFFF" BorderBrush="#33000000" BorderThickness="1" CornerRadius="4">
-      <Image Name="PreviewImage" Stretch="Uniform" Margin="6" />
+    <Border Grid.Row="3" Name="ImageDropBorder" Background="#FFC0FFFF" BorderBrush="#33000000" BorderThickness="1" CornerRadius="4" DragDrop.AllowDrop="True">
+      <Image Name="PreviewImage" Stretch="Uniform" Margin="6" DragDrop.AllowDrop="True" />
     </Border>
 
     <Grid Grid.Row="4" ColumnDefinitions="Auto,*" Margin="0,16,0,0">
