@@ -6,22 +6,46 @@
         Title="FolderIcon"
         Background="#FFF5F7FA"
         DragDrop.AllowDrop="True">
-  <Grid Name="RootGrid" Margin="20" RowDefinitions="Auto,Auto,Auto,*,Auto" ColumnDefinitions="*" DragDrop.AllowDrop="True">
+  <Grid Name="RootGrid"
+        Margin="20"
+        RowDefinitions="Auto,Auto,Auto,*,Auto"
+        ColumnDefinitions="*">
     <Grid Grid.Row="0" Grid.Column="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,8">
       <TextBlock Text="Select Folder:" FontWeight="Bold" VerticalAlignment="Center" />
       <Button Grid.Column="1" Name="ClearButton" Content="Clear" Width="100" Margin="8,0,0,0" Click="OnClearFolder" />
       <Button Grid.Column="2" Name="AddButton" Content="Add" Width="100" Margin="8,0,0,0" Click="OnAddFolder" />
     </Grid>
 
-    <Border Grid.Row="1" Name="FolderDropZone" Background="Transparent" DragDrop.AllowDrop="True">
-      <TextBox Name="FolderPathBox" Height="96" TextWrapping="Wrap" AcceptsReturn="True" VerticalContentAlignment="Top"
+    <Border Grid.Row="1"
+            Name="FolderDropZone"
+            Background="Transparent"
+            DragDrop.AllowDrop="True"
+            DragDrop.DragOver="OnFolderDragOver"
+            DragDrop.Drop="OnFolderDrop">
+      <TextBox Name="FolderPathBox"
+               Height="96"
+               TextWrapping="Wrap"
+               AcceptsReturn="True"
+               VerticalContentAlignment="Top"
+               IsHitTestVisible="False"
                TextChanged="OnFolderPathTextChanged" />
     </Border>
 
     <TextBlock Grid.Row="2" Text="Drag and drop your image here:" FontSize="20" Margin="0,18,0,8" HorizontalAlignment="Center" />
 
-    <Border Grid.Row="3" Name="ImageDropZone" Background="#FFC0FFFF" BorderBrush="#33000000" BorderThickness="1" CornerRadius="4" DragDrop.AllowDrop="True">
-      <Image Name="PreviewImage" Stretch="Uniform" Margin="6" IsHitTestVisible="False" DragDrop.AllowDrop="True" />
+    <Border Grid.Row="3"
+            Name="ImageDropZone"
+            Background="#FFC0FFFF"
+            BorderBrush="#33000000"
+            BorderThickness="1"
+            CornerRadius="4"
+            DragDrop.AllowDrop="True"
+            DragDrop.DragOver="OnImageDragOver"
+            DragDrop.Drop="OnImageDrop">
+      <Image Name="PreviewImage"
+             Stretch="Uniform"
+             Margin="6"
+             IsHitTestVisible="False" />
     </Border>
 
     <Grid Grid.Row="4" ColumnDefinitions="Auto,*" Margin="0,16,0,0">

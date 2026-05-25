@@ -39,42 +39,6 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         KeyDown += OnWindowKeyDown;
-
-        var folderDropZone = this.FindControl<Border>("FolderDropZone");
-        var imageDropZone = this.FindControl<Border>("ImageDropZone");
-
-        if (folderDropZone == null)
-            throw new InvalidOperationException("FolderDropZone not found.");
-
-        if (imageDropZone == null)
-            throw new InvalidOperationException("ImageDropZone not found.");
-
-        DragDrop.SetAllowDrop(folderDropZone, true);
-        DragDrop.SetAllowDrop(imageDropZone, true);
-
-        folderDropZone.AddHandler(
-            DragDrop.DragOverEvent,
-            OnFolderDragOver,
-            RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
-            handledEventsToo: true);
-
-        folderDropZone.AddHandler(
-            DragDrop.DropEvent,
-            OnFolderDrop,
-            RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
-            handledEventsToo: true);
-
-        imageDropZone.AddHandler(
-            DragDrop.DragOverEvent,
-            OnImageDragOver,
-            RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
-            handledEventsToo: true);
-
-        imageDropZone.AddHandler(
-            DragDrop.DropEvent,
-            OnImageDrop,
-            RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
-            handledEventsToo: true);
     }
 
     private async void OnAddFolder(object? sender, RoutedEventArgs e)
@@ -311,6 +275,15 @@ public partial class MainWindow : Window
 
     private async Task SetPreviewImageAsync(string imagePath)
     {
+        _imagePath = imagePath;
+
+        var previewImage = this.FindControl<Avalonia.Controls.Image>("PreviewImage");
+        if (previewImage == null)
+        {
+            await ShowMessage("错误", "PreviewImage not found.", true);
+            return;
+        }
+
         _previewBitmap?.Dispose();
         _previewBitmap = null;
 
@@ -323,17 +296,11 @@ public partial class MainWindow : Window
         {
             await using var output = new MemoryStream();
             using var magickImage = new MagickImage(imagePath);
+            magickImage.AutoOrient();
             magickImage.Format = MagickFormat.Png;
-            magickImage.Write(output);
+            await magickImage.WriteAsync(output);
             output.Position = 0;
             _previewBitmap = new Bitmap(output);
-        }
-
-        var previewImage = this.FindControl<Avalonia.Controls.Image>("PreviewImage");
-        if (previewImage == null)
-        {
-            await ShowMessage("错误", "PreviewImage not found.", true);
-            return;
         }
 
         previewImage.Source = _previewBitmap;
