@@ -49,7 +49,7 @@ public partial class MainWindow : Window
     private void OnFolderPathDragOver(object? s, DragEventArgs e) => e.DragEffects = DragDropEffects.Copy;
     private async void OnFolderPathDrop(object? s, DragEventArgs e)
     {
-        var files = await e.Data.GetFilesAsync();
+        var files = e.Data.GetFiles();
         var first = files?.FirstOrDefault();
         if (first is null) return;
         var path = first.Path.LocalPath;
@@ -65,7 +65,7 @@ public partial class MainWindow : Window
     private void OnImageDragOver(object? s, DragEventArgs e) => e.DragEffects = DragDropEffects.Copy;
     private async void OnImageDrop(object? s, DragEventArgs e)
     {
-        var files = await e.Data.GetFilesAsync();
+        var files = e.Data.GetFiles();
         var all = files?.ToList() ?? [];
         if (all.Count != 1)
         {
