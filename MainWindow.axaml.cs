@@ -43,20 +43,38 @@ public partial class MainWindow : Window
         var folderDropZone = this.FindControl<Border>("FolderDropZone");
         var imageDropZone = this.FindControl<Border>("ImageDropZone");
 
-        if (folderDropZone is null)
+        if (folderDropZone == null)
             throw new InvalidOperationException("FolderDropZone not found.");
 
-        if (imageDropZone is null)
+        if (imageDropZone == null)
             throw new InvalidOperationException("ImageDropZone not found.");
 
         DragDrop.SetAllowDrop(folderDropZone, true);
         DragDrop.SetAllowDrop(imageDropZone, true);
 
-        DragDrop.AddDragOverHandler(folderDropZone, OnFolderDragOver);
-        DragDrop.AddDropHandler(folderDropZone, OnFolderDrop);
+        folderDropZone.AddHandler(
+            DragDrop.DragOverEvent,
+            OnFolderDragOver,
+            RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
+            handledEventsToo: true);
 
-        DragDrop.AddDragOverHandler(imageDropZone, OnImageDragOver);
-        DragDrop.AddDropHandler(imageDropZone, OnImageDrop);
+        folderDropZone.AddHandler(
+            DragDrop.DropEvent,
+            OnFolderDrop,
+            RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
+            handledEventsToo: true);
+
+        imageDropZone.AddHandler(
+            DragDrop.DragOverEvent,
+            OnImageDragOver,
+            RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
+            handledEventsToo: true);
+
+        imageDropZone.AddHandler(
+            DragDrop.DropEvent,
+            OnImageDrop,
+            RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
+            handledEventsToo: true);
     }
 
     private async void OnAddFolder(object? sender, RoutedEventArgs e)
@@ -72,11 +90,16 @@ public partial class MainWindow : Window
     private void OnClearFolder(object? sender, RoutedEventArgs e)
     {
         _folderPath = null;
-        this.FindControl<TextBox>("FolderPathBox").Text = string.Empty;
+        var folderPathBox = this.FindControl<TextBox>("FolderPathBox");
+        if (folderPathBox != null)
+            folderPathBox.Text = string.Empty;
     }
 
     private void OnFolderPathTextChanged(object? sender, TextChangedEventArgs e)
-        => _folderPath = this.FindControl<TextBox>("FolderPathBox").Text;
+    {
+        var folderPathBox = this.FindControl<TextBox>("FolderPathBox");
+        _folderPath = folderPathBox?.Text;
+    }
 
     private void OnFolderDragOver(object? sender, DragEventArgs e)
     {
@@ -177,14 +200,19 @@ public partial class MainWindow : Window
 
     private static string? GetFirstDroppedPath(DragEventArgs e)
     {
-        if (!e.DataTransfer.Formats.Contains(DataFormat.File))
+        if (!e.Data.Contains(DataFormats.Files))
             return null;
 
-        var files = e.DataTransfer.GetFiles()?.ToList();
-        if (files == null || files.Count == 0)
+        var files = e.Data.GetFiles();
+        if (files == null)
             return null;
 
-        return files[0].Path.LocalPath;
+        foreach (var file in files)
+        {
+            return file.Path.LocalPath;
+        }
+
+        return null;
     }
 
     private async void OnFinish(object? sender, RoutedEventArgs e)
@@ -274,7 +302,11 @@ public partial class MainWindow : Window
     private void SetFolderPath(string path)
     {
         _folderPath = path;
-        this.FindControl<TextBox>("FolderPathBox").Text = path;
+        var folderPathBox = this.FindControl<TextBox>("FolderPathBox");
+        if (folderPathBox == null)
+            return;
+
+        folderPathBox.Text = path;
     }
 
     private async Task SetPreviewImageAsync(string imagePath)
@@ -297,7 +329,14 @@ public partial class MainWindow : Window
             _previewBitmap = new Bitmap(output);
         }
 
-        this.FindControl<Avalonia.Controls.Image>("PreviewImage").Source = _previewBitmap;
+        var previewImage = this.FindControl<Avalonia.Controls.Image>("PreviewImage");
+        if (previewImage == null)
+        {
+            await ShowMessage("错误", "PreviewImage not found.", true);
+            return;
+        }
+
+        previewImage.Source = _previewBitmap;
     }
 
     private async Task ApplyLinuxFolderIconAsync(string folderPath, string imagePath)
