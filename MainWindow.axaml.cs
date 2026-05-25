@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -14,6 +15,21 @@ namespace FolderIcon;
 
 public partial class MainWindow : Window
 {
+    private static readonly HashSet<string> SupportedImageExtensions =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".jfif",
+            ".gif",
+            ".bmp",
+            ".tif",
+            ".tiff",
+            ".ico"
+        };
+
     private string? _imagePath;
     private string? _folderPath;
     private string? _icoPath;
@@ -24,22 +40,23 @@ public partial class MainWindow : Window
         InitializeComponent();
         KeyDown += OnWindowKeyDown;
 
-        var routing = RoutingStrategies.Tunnel | RoutingStrategies.Bubble;
-        var rootGrid = this.FindControl<Grid>("RootGrid");
-        var folderPathBox = this.FindControl<TextBox>("FolderPathBox");
-        var imageDropBorder = this.FindControl<Border>("ImageDropBorder");
-        var previewImage = this.FindControl<Avalonia.Controls.Image>("PreviewImage");
+        var folderDropZone = this.FindControl<Border>("FolderDropZone");
+        var imageDropZone = this.FindControl<Border>("ImageDropZone");
 
-        AddHandler(DragDrop.DragOverEvent, OnDragOver, routing, handledEventsToo: true);
-        AddHandler(DragDrop.DropEvent, OnDrop, routing, handledEventsToo: true);
-        rootGrid.AddHandler(DragDrop.DragOverEvent, OnDragOver, routing, handledEventsToo: true);
-        rootGrid.AddHandler(DragDrop.DropEvent, OnDrop, routing, handledEventsToo: true);
-        folderPathBox.AddHandler(DragDrop.DragOverEvent, OnDragOver, routing, handledEventsToo: true);
-        folderPathBox.AddHandler(DragDrop.DropEvent, OnDrop, routing, handledEventsToo: true);
-        imageDropBorder.AddHandler(DragDrop.DragOverEvent, OnDragOver, routing, handledEventsToo: true);
-        imageDropBorder.AddHandler(DragDrop.DropEvent, OnDrop, routing, handledEventsToo: true);
-        previewImage.AddHandler(DragDrop.DragOverEvent, OnDragOver, routing, handledEventsToo: true);
-        previewImage.AddHandler(DragDrop.DropEvent, OnDrop, routing, handledEventsToo: true);
+        if (folderDropZone is null)
+            throw new InvalidOperationException("FolderDropZone not found.");
+
+        if (imageDropZone is null)
+            throw new InvalidOperationException("ImageDropZone not found.");
+
+        DragDrop.SetAllowDrop(folderDropZone, true);
+        DragDrop.SetAllowDrop(imageDropZone, true);
+
+        DragDrop.AddDragOverHandler(folderDropZone, OnFolderDragOver);
+        DragDrop.AddDropHandler(folderDropZone, OnFolderDrop);
+
+        DragDrop.AddDragOverHandler(imageDropZone, OnImageDragOver);
+        DragDrop.AddDropHandler(imageDropZone, OnImageDrop);
     }
 
     private async void OnAddFolder(object? sender, RoutedEventArgs e)
@@ -61,115 +78,113 @@ public partial class MainWindow : Window
     private void OnFolderPathTextChanged(object? sender, TextChangedEventArgs e)
         => _folderPath = this.FindControl<TextBox>("FolderPathBox").Text;
 
-    private bool IsPointerOverFolderDropArea(DragEventArgs e)
+    private void OnFolderDragOver(object? sender, DragEventArgs e)
     {
-        var folderPathBox = this.FindControl<TextBox>("FolderPathBox");
-        if (folderPathBox is null) return false;
+        Debug.WriteLine("Folder DragOver");
+        var path = GetFirstDroppedPath(e);
 
-        var point = e.GetPosition(folderPathBox);
-        var bounds = new Avalonia.Rect(folderPathBox.Bounds.Size);
-        return bounds.Contains(point);
+        if (!string.IsNullOrWhiteSpace(path) && Directory.Exists(path))
+            e.DragEffects = DragDropEffects.Copy;
+        else
+            e.DragEffects = DragDropEffects.None;
+
+        e.Handled = true;
     }
 
-    private bool IsPointerOverImageDropArea(DragEventArgs e)
+    private async void OnFolderDrop(object? sender, DragEventArgs e)
     {
-        var imageDropBorder = this.FindControl<Border>("ImageDropBorder");
-        if (imageDropBorder is null) return false;
+        Debug.WriteLine("Folder Drop");
 
-        var point = e.GetPosition(imageDropBorder);
-        var bounds = new Avalonia.Rect(imageDropBorder.Bounds.Size);
-        return bounds.Contains(point);
+        try
+        {
+            e.Handled = true;
+
+            var path = GetFirstDroppedPath(e);
+            if (string.IsNullOrWhiteSpace(path))
+                return;
+
+            if (!Directory.Exists(path))
+            {
+                await ShowMessage("提示", "这里只能拖入文件夹。", false);
+                return;
+            }
+
+            SetFolderPath(path);
+        }
+        catch (Exception ex)
+        {
+            await ShowMessage("拖拽错误", ex.ToString(), true);
+        }
+    }
+
+    private void OnImageDragOver(object? sender, DragEventArgs e)
+    {
+        Debug.WriteLine("Image DragOver");
+        var path = GetFirstDroppedPath(e);
+
+        if (!string.IsNullOrWhiteSpace(path)
+            && File.Exists(path)
+            && IsSupportedImageFile(path))
+        {
+            e.DragEffects = DragDropEffects.Copy;
+        }
+        else
+        {
+            e.DragEffects = DragDropEffects.None;
+        }
+
+        e.Handled = true;
+    }
+
+    private async void OnImageDrop(object? sender, DragEventArgs e)
+    {
+        Debug.WriteLine("Image Drop");
+
+        try
+        {
+            e.Handled = true;
+
+            var path = GetFirstDroppedPath(e);
+            if (string.IsNullOrWhiteSpace(path))
+                return;
+
+            if (Directory.Exists(path))
+            {
+                await ShowMessage("提示", "这里只能拖入图片文件。", false);
+                return;
+            }
+
+            if (!File.Exists(path))
+            {
+                await ShowMessage("提示", "拖入的文件不存在。", false);
+                return;
+            }
+
+            if (!IsSupportedImageFile(path))
+            {
+                await ShowMessage("提示", "不支持该图片格式。", false);
+                return;
+            }
+
+            _imagePath = path;
+            await SetPreviewImageAsync(path);
+        }
+        catch (Exception ex)
+        {
+            await ShowMessage("拖拽错误", ex.ToString(), true);
+        }
     }
 
     private static string? GetFirstDroppedPath(DragEventArgs e)
     {
-        var files = e.Data.GetFiles()?.ToList();
-        if (files is null || files.Count == 0) return null;
+        if (!e.DataTransfer.Formats.Contains(DataFormat.File))
+            return null;
+
+        var files = e.DataTransfer.GetFiles()?.ToList();
+        if (files == null || files.Count == 0)
+            return null;
+
         return files[0].Path.LocalPath;
-    }
-
-    private void OnDragOver(object? sender, DragEventArgs e)
-    {
-        var path = GetFirstDroppedPath(e);
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            e.DragEffects = DragDropEffects.None;
-            e.Handled = true;
-            return;
-        }
-
-        if (IsPointerOverFolderDropArea(e))
-        {
-            e.DragEffects = Directory.Exists(path) ? DragDropEffects.Copy : DragDropEffects.None;
-            e.Handled = true;
-            return;
-        }
-
-        if (IsPointerOverImageDropArea(e))
-        {
-            e.DragEffects = File.Exists(path) && IsSupportedImageFile(path) ? DragDropEffects.Copy : DragDropEffects.None;
-            e.Handled = true;
-            return;
-        }
-
-        e.DragEffects = DragDropEffects.None;
-        e.Handled = true;
-    }
-
-    private async void OnDrop(object? sender, DragEventArgs e)
-    {
-        try
-        {
-            e.Handled = true;
-            var path = GetFirstDroppedPath(e);
-            if (string.IsNullOrWhiteSpace(path)) return;
-
-            var overFolderArea = IsPointerOverFolderDropArea(e);
-            var overImageArea = IsPointerOverImageDropArea(e);
-
-            if (overFolderArea)
-            {
-                if (!Directory.Exists(path))
-                {
-                    await ShowMessage("提示", "这里只能拖入文件夹。", false);
-                    return;
-                }
-
-                SetFolderPath(path);
-                return;
-            }
-
-            if (overImageArea)
-            {
-                if (Directory.Exists(path))
-                {
-                    await ShowMessage("提示", "这里只能拖入图片文件。", false);
-                    return;
-                }
-
-                if (!File.Exists(path))
-                {
-                    await ShowMessage("提示", "拖入的文件不存在。", false);
-                    return;
-                }
-
-                if (!IsSupportedImageFile(path))
-                {
-                    await ShowMessage("提示", "不支持该图片格式。", false);
-                    return;
-                }
-
-                _imagePath = path;
-                await SetPreviewImageAsync(path);
-                return;
-            }
-
-            await ShowMessage("提示", "请将文件夹拖到路径输入框，或将图片拖到图片预览区域。", false);
-        }
-        catch (Exception ex)
-        {
-            await ShowMessage("拖拽错误", ex.ToString(), false);
-        }
     }
 
     private async void OnFinish(object? sender, RoutedEventArgs e)
@@ -251,10 +266,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private static bool IsSupportedImageFile(string filePath)
+    private static bool IsSupportedImageFile(string path)
     {
-        var ext = Path.GetExtension(filePath).ToLowerInvariant();
-        return ext is ".jpg" or ".jpeg" or ".png" or ".webp" or ".jfif" or ".gif" or ".bmp" or ".tif" or ".tiff" or ".ico";
+        return SupportedImageExtensions.Contains(Path.GetExtension(path));
     }
 
     private void SetFolderPath(string path)
