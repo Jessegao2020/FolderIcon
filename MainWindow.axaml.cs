@@ -21,6 +21,18 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         KeyDown += OnWindowKeyDown;
+
+        var folderPathBox = this.FindControl<TextBox>("FolderPathBox");
+        var imageDropBorder = this.FindControl<Border>("ImageDropBorder");
+
+        DragDrop.SetAllowDrop(folderPathBox, true);
+        DragDrop.SetAllowDrop(imageDropBorder, true);
+
+        folderPathBox.AddHandler(DragDrop.DragOverEvent, OnFolderPathDragOver);
+        folderPathBox.AddHandler(DragDrop.DropEvent, OnFolderPathDrop);
+
+        imageDropBorder.AddHandler(DragDrop.DragOverEvent, OnImageDragOver);
+        imageDropBorder.AddHandler(DragDrop.DropEvent, OnImageDrop);
     }
 
     private async void OnAddFolder(object? sender, RoutedEventArgs e)
@@ -46,7 +58,11 @@ public partial class MainWindow : Window
     private void OnFolderPathTextChanged(object? sender, TextChangedEventArgs e)
         => _folderPath = this.FindControl<TextBox>("FolderPathBox").Text;
 
-    private void OnFolderPathDragOver(object? s, DragEventArgs e) => e.DragEffects = DragDropEffects.Copy;
+    private void OnFolderPathDragOver(object? s, DragEventArgs e)
+    {
+        e.DragEffects = e.Data.Contains(DataFormats.Files) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
     private async void OnFolderPathDrop(object? s, DragEventArgs e)
     {
         var files = e.Data.GetFiles();
@@ -60,9 +76,14 @@ public partial class MainWindow : Window
         }
         _folderPath = path;
         this.FindControl<TextBox>("FolderPathBox").Text = path;
+        e.Handled = true;
     }
 
-    private void OnImageDragOver(object? s, DragEventArgs e) => e.DragEffects = DragDropEffects.Copy;
+    private void OnImageDragOver(object? s, DragEventArgs e)
+    {
+        e.DragEffects = e.Data.Contains(DataFormats.Files) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
     private async void OnImageDrop(object? s, DragEventArgs e)
     {
         var files = e.Data.GetFiles();
@@ -83,6 +104,7 @@ public partial class MainWindow : Window
         _imagePath = path;
         await using var stream = File.OpenRead(path);
         this.FindControl<Avalonia.Controls.Image>("PreviewImage").Source = new Bitmap(stream);
+        e.Handled = true;
     }
 
     private async void OnFinish(object? sender, RoutedEventArgs e)
