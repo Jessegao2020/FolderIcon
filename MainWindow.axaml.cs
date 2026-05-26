@@ -68,9 +68,7 @@ public partial class MainWindow : Window
     private void OnFolderDragOver(object? sender, DragEventArgs e)
     {
         Debug.WriteLine("Folder DragOver");
-        var path = GetFirstDroppedPath(e);
-
-        if (!string.IsNullOrWhiteSpace(path) && Directory.Exists(path))
+        if (e.Data.Contains(DataFormats.Files))
             e.DragEffects = DragDropEffects.Copy;
         else
             e.DragEffects = DragDropEffects.None;
@@ -107,11 +105,7 @@ public partial class MainWindow : Window
     private void OnImageDragOver(object? sender, DragEventArgs e)
     {
         Debug.WriteLine("Image DragOver");
-        var path = GetFirstDroppedPath(e);
-
-        if (!string.IsNullOrWhiteSpace(path)
-            && File.Exists(path)
-            && IsSupportedImageFile(path))
+        if (e.Data.Contains(DataFormats.Files))
         {
             e.DragEffects = DragDropEffects.Copy;
         }

@@ -28,14 +28,17 @@
                AcceptsReturn="True"
                VerticalContentAlignment="Top"
                IsHitTestVisible="False"
-               TextChanged="OnFolderPathTextChanged" />
+               TextChanged="OnFolderPathTextChanged"
+               DragDrop.AllowDrop="True"
+               DragDrop.DragOver="OnFolderDragOver"
+               DragDrop.Drop="OnFolderDrop" />
     </Border>
 
     <TextBlock Grid.Row="2" Text="Drag and drop your image here:" FontSize="20" Margin="0,18,0,8" HorizontalAlignment="Center" />
 
     <Border Grid.Row="3"
             Name="ImageDropZone"
-            Background="#FFC0FFFF"
+            Background="Transparent"
             BorderBrush="#33000000"
             BorderThickness="1"
             CornerRadius="4"
