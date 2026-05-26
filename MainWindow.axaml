@@ -18,23 +18,24 @@
 
     <Border Grid.Row="1"
             Name="FolderDropZone"
-            Background="Transparent">
+            Background="Transparent"
+            DragDrop.AllowDrop="True"
+            DragDrop.DragOver="OnFolderDragOver"
+            DragDrop.Drop="OnFolderDrop">
       <TextBox Name="FolderPathBox"
                Height="96"
                TextWrapping="Wrap"
                AcceptsReturn="True"
                VerticalContentAlignment="Top"
                TextChanged="OnFolderPathTextChanged"
-               DragDrop.AllowDrop="True"
-               DragDrop.DragOver="OnFolderDragOver"
-               DragDrop.Drop="OnFolderDrop" />
+               IsHitTestVisible="False" />
     </Border>
 
     <TextBlock Grid.Row="2" Text="Drag and drop your image here:" FontSize="20" Margin="0,18,0,8" HorizontalAlignment="Center" />
 
     <Border Grid.Row="3"
             Name="ImageDropZone"
-            Background="Transparent"
+            Background="#FFC0FFFF"
             BorderBrush="#33000000"
             BorderThickness="1"
             CornerRadius="4"
@@ -43,7 +44,8 @@
             DragDrop.Drop="OnImageDrop">
       <Image Name="PreviewImage"
              Stretch="Uniform"
-             Margin="6" />
+             Margin="6"
+             IsHitTestVisible="False" />
     </Border>
 
     <Grid Grid.Row="4" ColumnDefinitions="Auto,*" Margin="0,16,0,0">

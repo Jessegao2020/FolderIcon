@@ -77,10 +77,7 @@ public partial class MainWindow : Window
         Console.WriteLine("Folder DragOver");
         Debug.WriteLine("Folder DragOver");
 
-        e.DragEffects = HasDroppedFileData(e)
-            ? DragDropEffects.Copy
-            : DragDropEffects.None;
-
+        e.DragEffects = DragDropEffects.Copy;
         e.Handled = true;
     }
 
@@ -119,10 +116,7 @@ public partial class MainWindow : Window
         Console.WriteLine("Image DragOver");
         Debug.WriteLine("Image DragOver");
 
-        e.DragEffects = HasDroppedFileData(e)
-            ? DragDropEffects.Copy
-            : DragDropEffects.None;
-
+        e.DragEffects = DragDropEffects.Copy;
         e.Handled = true;
     }
 
