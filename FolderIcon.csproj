@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Form1.cs;Form1.Designer.cs;Properties/AssemblyInfo.cs;Properties/Resources.Designer.cs;Properties/Settings.Designer.cs" />
+    <EmbeddedResource Remove="Form1.resx;Properties/Resources.resx" />
+    <None Remove="App.config;packages.config;Properties/Settings.settings" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.0" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.0" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.0" />
