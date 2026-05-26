@@ -167,7 +167,7 @@ public partial class MainWindow : Window
             if (!string.IsNullOrWhiteSpace(uriList))
             {
                 var firstLine = uriList
-                    .Split(new[] { '', '
+                    .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
 ' }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.Trim())
                     .FirstOrDefault(x => !x.StartsWith("#"));
