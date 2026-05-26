@@ -2,12 +2,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="FolderIcon.MainWindow"
         Width="520"
-        Height="520"
+        Height="560"
         Title="Folder Icon">
 
     <Grid Name="RootGrid"
           Margin="20"
-          RowDefinitions="Auto,Auto,Auto,*,Auto"
+          RowDefinitions="Auto,Auto,Auto,*,Auto,Auto"
           ColumnDefinitions="*"
           RowSpacing="10">
 
@@ -17,26 +17,27 @@
 
         <Border Grid.Row="1"
                 Name="FolderDropZone"
-                Background="Transparent"
+                Background="#01FFFFFF"
                 BorderBrush="#66000000"
                 BorderThickness="1"
                 CornerRadius="4"
-                DragDrop.AllowDrop="True">
+                DragDrop.AllowDrop="True"
+                DragDrop.DragOver="OnFolderDragOver"
+                DragDrop.Drop="OnFolderDrop">
             <TextBox Name="FolderPathBox"
                      Height="90"
                      TextWrapping="Wrap"
                      AcceptsReturn="True"
                      VerticalContentAlignment="Top"
-                     IsHitTestVisible="False"
                      TextChanged="OnFolderPathTextChanged" />
         </Border>
 
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
                     Spacing="8">
-            <Button Content="Add"
+            <Button Content="Browse..."
                     Width="90"
-                    Click="OnAddFolder" />
+                    Click="OnBrowseFolderClick" />
             <Button Content="Clear"
                     Width="90"
                     Click="OnClearFolder" />
@@ -48,22 +49,36 @@
                 BorderBrush="#33000000"
                 BorderThickness="1"
                 CornerRadius="4"
-                DragDrop.AllowDrop="True">
+                DragDrop.AllowDrop="True"
+                DragDrop.DragOver="OnImageDragOver"
+                DragDrop.Drop="OnImageDrop">
             <Grid>
                 <Image Name="PreviewImage"
                        Stretch="Uniform"
                        Margin="6"
                        IsHitTestVisible="False" />
-                <TextBlock Text="Drop image here"
+                <TextBlock Name="DropPromptText"
+                           Text="Drop image here (or use Browse button below)"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Foreground="#66000000"
-                           FontSize="18"
+                           FontSize="16"
                            IsHitTestVisible="False" />
             </Grid>
         </Border>
 
         <StackPanel Grid.Row="4"
+                    Orientation="Horizontal"
+                    Spacing="8">
+            <Button Content="Browse Image..."
+                    Width="130"
+                    Click="OnBrowseImageClick" />
+            <Button Content="Clear Image"
+                    Width="110"
+                    Click="OnClearImageClick" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="5"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Spacing="8">
