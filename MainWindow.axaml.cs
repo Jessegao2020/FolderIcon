@@ -4,9 +4,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using ImageMagick;
@@ -15,20 +18,19 @@ namespace FolderIcon;
 
 public partial class MainWindow : Window
 {
-    private static readonly HashSet<string> SupportedImageExtensions =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ".jpg",
-            ".jpeg",
-            ".png",
-            ".webp",
-            ".jfif",
-            ".gif",
-            ".bmp",
-            ".tif",
-            ".tiff",
-            ".ico"
-        };
+    private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp",
+        ".jfif",
+        ".gif",
+        ".bmp",
+        ".tif",
+        ".tiff",
+        ".ico"
+    };
 
     private string? _imagePath;
     private string? _folderPath;
@@ -39,21 +41,62 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         KeyDown += OnWindowKeyDown;
+
+        var folderDropZone = this.FindControl<Border>("FolderDropZone");
+        var imageDropZone = this.FindControl<Border>("ImageDropZone");
+
+        if (folderDropZone != null)
+        {
+            DragDrop.SetAllowDrop(folderDropZone, true);
+
+            folderDropZone.AddHandler(
+                DragDrop.DragOverEvent,
+                OnFolderDragOver,
+                RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
+                handledEventsToo: true);
+
+            folderDropZone.AddHandler(
+                DragDrop.DropEvent,
+                OnFolderDrop,
+                RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
+                handledEventsToo: true);
+        }
+
+        if (imageDropZone != null)
+        {
+            DragDrop.SetAllowDrop(imageDropZone, true);
+
+            imageDropZone.AddHandler(
+                DragDrop.DragOverEvent,
+                OnImageDragOver,
+                RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
+                handledEventsToo: true);
+
+            imageDropZone.AddHandler(
+                DragDrop.DropEvent,
+                OnImageDrop,
+                RoutingStrategies.Tunnel | RoutingStrategies.Bubble,
+                handledEventsToo: true);
+        }
     }
 
     private async void OnAddFolder(object? sender, RoutedEventArgs e)
     {
-        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Select folder", AllowMultiple = false });
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Select folder",
+            AllowMultiple = false
+        });
+
         var folder = folders.FirstOrDefault();
         if (folder is not null)
-        {
             SetFolderPath(folder.Path.LocalPath);
-        }
     }
 
     private void OnClearFolder(object? sender, RoutedEventArgs e)
     {
         _folderPath = null;
+
         var folderPathBox = this.FindControl<TextBox>("FolderPathBox");
         if (folderPathBox != null)
             folderPathBox.Text = string.Empty;
@@ -61,22 +104,13 @@ public partial class MainWindow : Window
 
     private void OnFolderPathTextChanged(object? sender, TextChangedEventArgs e)
     {
-        var folderPathBox = this.FindControl<TextBox>("FolderPathBox");
-        _folderPath = folderPathBox?.Text;
-    }
-
-
-    private static bool HasDroppedFileData(DragEventArgs e)
-    {
-        return e.Data.Contains(DataFormats.Files)
-            || e.Data.Contains("text/uri-list");
+        if (sender is TextBox textBox)
+            _folderPath = textBox.Text;
     }
 
     private void OnFolderDragOver(object? sender, DragEventArgs e)
     {
         Console.WriteLine("Folder DragOver");
-        Debug.WriteLine("Folder DragOver");
-
         e.DragEffects = DragDropEffects.Copy;
         e.Handled = true;
     }
@@ -84,7 +118,6 @@ public partial class MainWindow : Window
     private async void OnFolderDrop(object? sender, DragEventArgs e)
     {
         Console.WriteLine("Folder Drop");
-        Debug.WriteLine("Folder Drop");
 
         try
         {
@@ -93,13 +126,13 @@ public partial class MainWindow : Window
             var path = GetFirstDroppedPath(e);
             if (string.IsNullOrWhiteSpace(path))
             {
-                await ShowMessage("提示", "未解析到拖拽路径。", false);
+                await ShowMessage("提示", "未解析到拖拽路径。");
                 return;
             }
 
             if (!Directory.Exists(path))
             {
-                await ShowMessage("提示", "这里只能拖入文件夹。", false);
+                await ShowMessage("提示", "这里只能拖入文件夹。");
                 return;
             }
 
@@ -107,15 +140,13 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            await ShowMessage("拖拽错误", ex.ToString(), true);
+            await ShowMessage("拖拽错误", ex.ToString());
         }
     }
 
     private void OnImageDragOver(object? sender, DragEventArgs e)
     {
         Console.WriteLine("Image DragOver");
-        Debug.WriteLine("Image DragOver");
-
         e.DragEffects = DragDropEffects.Copy;
         e.Handled = true;
     }
@@ -123,7 +154,6 @@ public partial class MainWindow : Window
     private async void OnImageDrop(object? sender, DragEventArgs e)
     {
         Console.WriteLine("Image Drop");
-        Debug.WriteLine("Image Drop");
 
         try
         {
@@ -132,25 +162,25 @@ public partial class MainWindow : Window
             var path = GetFirstDroppedPath(e);
             if (string.IsNullOrWhiteSpace(path))
             {
-                await ShowMessage("提示", "未解析到拖拽路径。", false);
+                await ShowMessage("提示", "未解析到拖拽路径。");
                 return;
             }
 
             if (Directory.Exists(path))
             {
-                await ShowMessage("提示", "这里只能拖入图片文件。", false);
+                await ShowMessage("提示", "这里只能拖入图片文件。");
                 return;
             }
 
             if (!File.Exists(path))
             {
-                await ShowMessage("提示", "拖入的文件不存在。", false);
+                await ShowMessage("提示", "拖入的文件不存在。");
                 return;
             }
 
             if (!IsSupportedImageFile(path))
             {
-                await ShowMessage("提示", "不支持该图片格式。", false);
+                await ShowMessage("提示", "不支持该图片格式。");
                 return;
             }
 
@@ -158,7 +188,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            await ShowMessage("拖拽错误", ex.ToString(), true);
+            await ShowMessage("拖拽错误", ex.ToString());
         }
     }
 
@@ -170,18 +200,25 @@ public partial class MainWindow : Window
             if (files != null)
             {
                 foreach (var file in files)
+                {
                     var path = file.Path.LocalPath;
                     if (!string.IsNullOrWhiteSpace(path))
                         return path;
+                }
+            }
+        }
 
         if (e.Data.Contains("text/uri-list"))
+        {
             var uriList = e.Data.Get("text/uri-list") as string;
             if (!string.IsNullOrWhiteSpace(uriList))
+            {
                 var lines = uriList.Split(
                     new[] { "\r\n", "\n", "\r" },
                     StringSplitOptions.RemoveEmptyEntries);
 
                 foreach (var line in lines)
+                {
                     var trimmed = line.Trim();
 
                     if (string.IsNullOrWhiteSpace(trimmed))
@@ -192,14 +229,6 @@ public partial class MainWindow : Window
 
                     if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri) && uri.IsFile)
                         return uri.LocalPath;
-        if (e.Data.Contains(DataFormats.Files))
-        {
-            var files = e.Data.GetFiles();
-            if (files != null)
-            {
-                foreach (var file in files)
-                {
-                    return file.Path.LocalPath;
                 }
             }
         }
@@ -213,40 +242,40 @@ public partial class MainWindow : Window
         {
             if (string.IsNullOrWhiteSpace(_imagePath))
             {
-                await ShowMessage("Tip", "Please add an image.", false);
+                await ShowMessage("Tip", "Please add an image.");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(_folderPath) || !Directory.Exists(_folderPath))
             {
-                await ShowMessage("Tip", "Please add a folder path.", false);
+                await ShowMessage("Tip", "Please add a folder path.");
                 return;
             }
 
             if (OperatingSystem.IsLinux())
             {
-                await ApplyLinuxFolderIconAsync(_folderPath!, _imagePath!);
+                await ApplyLinuxFolderIconAsync(_folderPath, _imagePath);
             }
             else if (OperatingSystem.IsMacOS())
             {
-                await ApplyMacFolderIconAsync(_folderPath!, _imagePath!);
+                await ApplyMacFolderIconAsync(_folderPath, _imagePath);
             }
             else if (OperatingSystem.IsWindows())
             {
                 GenerateWindowsIco();
-                ApplyWindowsFolderIcon();
+                await ApplyWindowsFolderIconAsync();
             }
             else
             {
-                await ShowMessage("Warning", "当前操作系统暂不支持自动设置文件夹图标。", false);
+                await ShowMessage("Warning", "当前操作系统暂不支持自动设置文件夹图标。");
                 return;
             }
 
-            await ShowMessage("Info", "Folder icon changed successfully.", false);
+            await ShowMessage("Info", "Folder icon changed successfully.");
         }
         catch (Exception ex)
         {
-            await ShowMessage("Error", ex.Message, false);
+            await ShowMessage("Error", ex.Message);
         }
     }
 
@@ -256,7 +285,7 @@ public partial class MainWindow : Window
         {
             if (string.IsNullOrWhiteSpace(_folderPath))
             {
-                await ShowMessage("Warning", "Please select a folder path.", false);
+                await ShowMessage("Warning", "Please select a folder path.");
                 return;
             }
 
@@ -274,15 +303,15 @@ public partial class MainWindow : Window
             }
             else
             {
-                await ShowMessage("Warning", "当前操作系统暂不支持自动恢复文件夹图标。", false);
+                await ShowMessage("Warning", "当前操作系统暂不支持自动恢复文件夹图标。");
                 return;
             }
 
-            await ShowMessage("Info", "Restore finished.", false);
+            await ShowMessage("Info", "Restore finished.");
         }
         catch (Exception ex)
         {
-            await ShowMessage("Error", ex.Message, false);
+            await ShowMessage("Error", ex.Message);
         }
     }
 
@@ -294,21 +323,20 @@ public partial class MainWindow : Window
     private void SetFolderPath(string path)
     {
         _folderPath = path;
-        var folderPathBox = this.FindControl<TextBox>("FolderPathBox");
-        if (folderPathBox == null)
-            return;
 
-        folderPathBox.Text = path;
+        var folderPathBox = this.FindControl<TextBox>("FolderPathBox");
+        if (folderPathBox != null)
+            folderPathBox.Text = path;
     }
 
     private async Task SetPreviewImageAsync(string imagePath)
     {
         _imagePath = imagePath;
 
-        var previewImage = this.FindControl<Avalonia.Controls.Image>("PreviewImage");
+        var previewImage = this.FindControl<Image>("PreviewImage");
         if (previewImage == null)
         {
-            await ShowMessage("错误", "PreviewImage not found.", true);
+            await ShowMessage("错误", "PreviewImage not found.");
             return;
         }
 
@@ -337,7 +365,10 @@ public partial class MainWindow : Window
     private async Task ApplyLinuxFolderIconAsync(string folderPath, string imagePath)
     {
         var uri = new Uri(Path.GetFullPath(imagePath)).AbsoluteUri;
-        var result = await RunProcessAsync("gio", ["set", "-t", "string", folderPath, "metadata::custom-icon", uri]);
+
+        var result = await RunProcessAsync(
+            "gio",
+            new[] { "set", "-t", "string", folderPath, "metadata::custom-icon", uri });
 
         if (result.ExitCode != 0)
         {
@@ -354,103 +385,111 @@ public partial class MainWindow : Window
 
     private async Task RestoreLinuxFolderIconAsync(string folderPath)
     {
-        var result = await RunProcessAsync("gio", ["set", "-t", "unset", folderPath, "metadata::custom-icon"]);
+        var result = await RunProcessAsync(
+            "gio",
+            new[] { "set", "-t", "unset", folderPath, "metadata::custom-icon" });
+
         if (result.ExitCode != 0)
-        {
             throw new InvalidOperationException($"gio restore failed: {result.StdErr}");
-        }
     }
 
     private async Task ApplyMacFolderIconAsync(string folderPath, string imagePath)
     {
-        var check = await RunProcessAsync("which", ["fileicon"]);
+        var check = await RunProcessAsync("which", new[] { "fileicon" });
         if (check.ExitCode != 0)
-        {
             throw new InvalidOperationException("macOS 文件夹图标功能需要安装 fileicon，请先执行：brew install fileicon");
-        }
 
-        var result = await RunProcessAsync("fileicon", ["set", folderPath, imagePath]);
+        var result = await RunProcessAsync("fileicon", new[] { "set", folderPath, imagePath });
         if (result.ExitCode != 0)
-        {
             throw new InvalidOperationException($"fileicon set failed: {result.StdErr}");
-        }
     }
 
     private async Task RestoreMacFolderIconAsync(string folderPath)
     {
-        var check = await RunProcessAsync("which", ["fileicon"]);
+        var check = await RunProcessAsync("which", new[] { "fileicon" });
         if (check.ExitCode != 0)
-        {
             throw new InvalidOperationException("macOS 文件夹图标功能需要安装 fileicon，请先执行：brew install fileicon");
-        }
 
-        var result = await RunProcessAsync("fileicon", ["rm", folderPath]);
+        var result = await RunProcessAsync("fileicon", new[] { "rm", folderPath });
         if (result.ExitCode != 0)
-        {
             throw new InvalidOperationException($"fileicon rm failed: {result.StdErr}");
-        }
     }
 
     private void GenerateWindowsIco()
     {
-        var random = RandomString(6);
-        _icoPath = Path.Combine(_folderPath!, $"icon-{random}.ico");
+        if (_folderPath == null || _imagePath == null)
+            return;
 
-        using var image = new MagickImage(_imagePath!);
-        image.BackgroundColor = new MagickColor("transparent");
+        var random = RandomString(6);
+        _icoPath = Path.Combine(_folderPath, $"icon-{random}.ico");
+
+        using var image = new MagickImage(_imagePath);
+        image.BackgroundColor = MagickColors.Transparent;
         image.Resize(new MagickGeometry(256, 256));
         image.Extent(256, 256, Gravity.Center);
         image.Write(_icoPath);
     }
 
-    private void ApplyWindowsFolderIcon()
+    private async Task ApplyWindowsFolderIconAsync()
     {
-        if (_folderPath is null || _icoPath is null) return;
+        if (_folderPath is null || _icoPath is null)
+            return;
+
         var iniPath = Path.Combine(_folderPath, "desktop.ini");
-        File.WriteAllText(iniPath, "[.ShellClassInfo]\nIconResource=" + Path.GetFileName(_icoPath) + ",0\n");
-        if (OperatingSystem.IsWindows())
-        {
-            var attribPath = Environment.ExpandEnvironmentVariables("%SystemRoot%\\System32\\attrib.exe");
-            _ = RunProcessAsync(attribPath, ["+h", _icoPath]).Result;
-            _ = RunProcessAsync(attribPath, ["+s", "+r", _folderPath]).Result;
-            _ = RunProcessAsync(attribPath, ["+h", "+s", iniPath]).Result;
-        }
+
+        var iniText =
+            "[.ShellClassInfo]" + Environment.NewLine +
+            "IconResource=" + Path.GetFileName(_icoPath) + ",0" + Environment.NewLine;
+
+        File.WriteAllText(iniPath, iniText);
+
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        var attribPath = Environment.ExpandEnvironmentVariables("%SystemRoot%\\System32\\attrib.exe");
+
+        await RunProcessAsync(attribPath, new[] { "+h", _icoPath });
+        await RunProcessAsync(attribPath, new[] { "+s", "+r", _folderPath });
+        await RunProcessAsync(attribPath, new[] { "+h", "+s", iniPath });
     }
 
     private void RestoreWindowsFolderIcon(string folderPath)
     {
         var iniPath = Path.Combine(folderPath, "desktop.ini");
-        if (File.Exists(iniPath)) File.Delete(iniPath);
+        if (File.Exists(iniPath))
+            File.Delete(iniPath);
     }
 
-    private static string RandomString(int digits)
+    private static string RandomString(int length)
     {
-        var chars = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
+        const string chars = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
         var random = new Random();
-        return new string(Enumerable.Repeat(chars, digits).Select(s => s[random.Next(s.Length)]).ToArray());
+        return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
     }
 
-    private static async Task<(int ExitCode, string StdOut, string StdErr)> RunProcessAsync(string fileName, IReadOnlyList<string> arguments)
+    private static async Task<(int ExitCode, string StdOut, string StdErr)> RunProcessAsync(
+        string fileName,
+        IEnumerable<string> arguments)
     {
         try
         {
             var psi = new ProcessStartInfo(fileName)
             {
-    private async Task ShowMessage(string title, string message, bool isError = false)
+                RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
 
             foreach (var arg in arguments)
-            {
                 psi.ArgumentList.Add(arg);
-            }
 
             using var process = new Process { StartInfo = psi };
             process.Start();
+
             var stdoutTask = process.StandardOutput.ReadToEndAsync();
             var stderrTask = process.StandardError.ReadToEndAsync();
+
             await process.WaitForExitAsync();
 
             return (process.ExitCode, await stdoutTask, await stderrTask);
@@ -461,8 +500,15 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task ShowMessage(string title, string message, bool isError)
+    private async Task ShowMessage(string title, string message)
     {
+        var okButton = new Button
+        {
+            Content = "OK",
+            Width = 80,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+
         var window = new Window
         {
             Width = 420,
@@ -471,25 +517,21 @@ public partial class MainWindow : Window
             CanResize = false,
             Content = new StackPanel
             {
-                Margin = new Avalonia.Thickness(16),
+                Margin = new Thickness(16),
                 Spacing = 12,
                 Children =
                 {
-                    new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap },
-                    new Button
+                    new TextBlock
                     {
-                        Content = "OK",
-                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                        Width = 80,
-                    }
+                        Text = message,
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    okButton
                 }
             }
         };
 
-        if (window.Content is StackPanel panel && panel.Children.Last() is Button button)
-        {
-            button.Click += (_, _) => window.Close();
-        }
+        okButton.Click += (_, _) => window.Close();
 
         await window.ShowDialog(this);
     }
@@ -497,8 +539,6 @@ public partial class MainWindow : Window
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.W)
-        {
             Close();
-        }
     }
 }

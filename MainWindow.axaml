@@ -1,56 +1,78 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="FolderIcon.MainWindow"
-        Width="519" Height="627"
-        CanResize="False"
-        Title="FolderIcon"
-        Background="#FFF5F7FA"
-        DragDrop.AllowDrop="True">
-  <Grid Name="RootGrid"
-        Margin="20"
-        RowDefinitions="Auto,Auto,Auto,*,Auto"
-        ColumnDefinitions="*">
-    <Grid Grid.Row="0" Grid.Column="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,8">
-      <TextBlock Text="Select Folder:" FontWeight="Bold" VerticalAlignment="Center" />
-      <Button Grid.Column="1" Name="ClearButton" Content="Clear" Width="100" Margin="8,0,0,0" Click="OnClearFolder" />
-      <Button Grid.Column="2" Name="AddButton" Content="Add" Width="100" Margin="8,0,0,0" Click="OnAddFolder" />
+        Width="520"
+        Height="520"
+        Title="Folder Icon">
+
+    <Grid Name="RootGrid"
+          Margin="20"
+          RowDefinitions="Auto,Auto,Auto,*,Auto"
+          ColumnDefinitions="*"
+          RowSpacing="10">
+
+        <TextBlock Grid.Row="0"
+                   Text="Folder path:"
+                   FontSize="16" />
+
+        <Border Grid.Row="1"
+                Name="FolderDropZone"
+                Background="Transparent"
+                BorderBrush="#66000000"
+                BorderThickness="1"
+                CornerRadius="4"
+                DragDrop.AllowDrop="True">
+            <TextBox Name="FolderPathBox"
+                     Height="90"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"
+                     VerticalContentAlignment="Top"
+                     IsHitTestVisible="False"
+                     TextChanged="OnFolderPathTextChanged" />
+        </Border>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    Spacing="8">
+            <Button Content="Add"
+                    Width="90"
+                    Click="OnAddFolder" />
+            <Button Content="Clear"
+                    Width="90"
+                    Click="OnClearFolder" />
+        </StackPanel>
+
+        <Border Grid.Row="3"
+                Name="ImageDropZone"
+                Background="#FFC0FFFF"
+                BorderBrush="#33000000"
+                BorderThickness="1"
+                CornerRadius="4"
+                DragDrop.AllowDrop="True">
+            <Grid>
+                <Image Name="PreviewImage"
+                       Stretch="Uniform"
+                       Margin="6"
+                       IsHitTestVisible="False" />
+                <TextBlock Text="Drop image here"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="#66000000"
+                           FontSize="18"
+                           IsHitTestVisible="False" />
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="4"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8">
+            <Button Content="Restore"
+                    Width="100"
+                    Click="OnRestore" />
+            <Button Content="Finish"
+                    Width="100"
+                    Click="OnFinish" />
+        </StackPanel>
     </Grid>
-
-    <Border Grid.Row="1"
-            Name="FolderDropZone"
-            Background="Transparent"
-            DragDrop.AllowDrop="True"
-            DragDrop.DragOver="OnFolderDragOver"
-            DragDrop.Drop="OnFolderDrop">
-      <TextBox Name="FolderPathBox"
-               Height="96"
-               TextWrapping="Wrap"
-               AcceptsReturn="True"
-               VerticalContentAlignment="Top"
-               TextChanged="OnFolderPathTextChanged"
-               IsHitTestVisible="False" />
-    </Border>
-
-    <TextBlock Grid.Row="2" Text="Drag and drop your image here:" FontSize="20" Margin="0,18,0,8" HorizontalAlignment="Center" />
-
-    <Border Grid.Row="3"
-            Name="ImageDropZone"
-            Background="#FFC0FFFF"
-            BorderBrush="#33000000"
-            BorderThickness="1"
-            CornerRadius="4"
-            DragDrop.AllowDrop="True"
-            DragDrop.DragOver="OnImageDragOver"
-            DragDrop.Drop="OnImageDrop">
-      <Image Name="PreviewImage"
-             Stretch="Uniform"
-             Margin="6"
-             IsHitTestVisible="False" />
-    </Border>
-
-    <Grid Grid.Row="4" ColumnDefinitions="Auto,*" Margin="0,16,0,0">
-      <Button Name="RestoreButton" Content="Restore" Background="#FFC0C0FF" Width="90" Height="49" Click="OnRestore" />
-      <Button Grid.Column="1" Name="FinishButton" Content="Finish" Height="49" Margin="8,0,0,0" Click="OnFinish" FontSize="20" />
-    </Grid>
-  </Grid>
 </Window>
