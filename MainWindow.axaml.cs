@@ -65,19 +65,28 @@ public partial class MainWindow : Window
         _folderPath = folderPathBox?.Text;
     }
 
+
+    private static bool HasDroppedFileData(DragEventArgs e)
+    {
+        return e.Data.Contains(DataFormats.Files)
+            || e.Data.Contains("text/uri-list");
+    }
+
     private void OnFolderDragOver(object? sender, DragEventArgs e)
     {
+        Console.WriteLine("Folder DragOver");
         Debug.WriteLine("Folder DragOver");
-        if (e.Data.Contains(DataFormats.Files))
-            e.DragEffects = DragDropEffects.Copy;
-        else
-            e.DragEffects = DragDropEffects.None;
+
+        e.DragEffects = HasDroppedFileData(e)
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
 
         e.Handled = true;
     }
 
     private async void OnFolderDrop(object? sender, DragEventArgs e)
     {
+        Console.WriteLine("Folder Drop");
         Debug.WriteLine("Folder Drop");
 
         try
@@ -87,13 +96,13 @@ public partial class MainWindow : Window
             var path = GetFirstDroppedPath(e);
             if (string.IsNullOrWhiteSpace(path))
             {
-                await ShowMessage("提示", "未解析到有效拖拽路径。解析结果为空。", false);
+                await ShowMessage("提示", "未解析到拖拽路径。", false);
                 return;
             }
 
             if (!Directory.Exists(path))
             {
-                await ShowMessage("提示", $"这里只能拖入文件夹。\n解析路径：{path}", false);
+                await ShowMessage("提示", "这里只能拖入文件夹。", false);
                 return;
             }
 
@@ -107,21 +116,19 @@ public partial class MainWindow : Window
 
     private void OnImageDragOver(object? sender, DragEventArgs e)
     {
+        Console.WriteLine("Image DragOver");
         Debug.WriteLine("Image DragOver");
-        if (e.Data.Contains(DataFormats.Files))
-        {
-            e.DragEffects = DragDropEffects.Copy;
-        }
-        else
-        {
-            e.DragEffects = DragDropEffects.None;
-        }
+
+        e.DragEffects = HasDroppedFileData(e)
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
 
         e.Handled = true;
     }
 
     private async void OnImageDrop(object? sender, DragEventArgs e)
     {
+        Console.WriteLine("Image Drop");
         Debug.WriteLine("Image Drop");
 
         try
@@ -130,7 +137,10 @@ public partial class MainWindow : Window
 
             var path = GetFirstDroppedPath(e);
             if (string.IsNullOrWhiteSpace(path))
+            {
+                await ShowMessage("提示", "未解析到拖拽路径。", false);
                 return;
+            }
 
             if (Directory.Exists(path))
             {
@@ -150,7 +160,6 @@ public partial class MainWindow : Window
                 return;
             }
 
-            _imagePath = path;
             await SetPreviewImageAsync(path);
         }
         catch (Exception ex)
@@ -161,30 +170,34 @@ public partial class MainWindow : Window
 
     private static string? GetFirstDroppedPath(DragEventArgs e)
     {
-        if (e.Data.Contains("text/uri-list"))
+        if (e.Data.Contains(DataFormats.Files))
         {
+            var files = e.Data.GetFiles();
+            if (files != null)
+            {
+                foreach (var file in files)
+                    var path = file.Path.LocalPath;
+                    if (!string.IsNullOrWhiteSpace(path))
+                        return path;
+
+        if (e.Data.Contains("text/uri-list"))
             var uriList = e.Data.Get("text/uri-list") as string;
             if (!string.IsNullOrWhiteSpace(uriList))
-            {
-                var firstLine = uriList
-                    .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(x => x.Trim())
-                    .FirstOrDefault(x => !x.StartsWith("#"));
+                var lines = uriList.Split(
+                    new[] { "\r\n", "\n", "\r" },
+                    StringSplitOptions.RemoveEmptyEntries);
 
-                if (!string.IsNullOrWhiteSpace(firstLine) && firstLine.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
-                {
-                    var rawPath = firstLine.Substring("file://".Length);
-                    if (rawPath.StartsWith("/"))
-                    {
-                        return Uri.UnescapeDataString(rawPath);
-                    }
+                foreach (var line in lines)
+                    var trimmed = line.Trim();
 
-                    return Uri.UnescapeDataString("/" + rawPath);
-                }
-            }
-        }
+                    if (string.IsNullOrWhiteSpace(trimmed))
+                        continue;
 
+                    if (trimmed.StartsWith("#"))
+                        continue;
+
+                    if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri) && uri.IsFile)
+                        return uri.LocalPath;
         if (e.Data.Contains(DataFormats.Files))
         {
             var files = e.Data.GetFiles();
@@ -429,7 +442,7 @@ public partial class MainWindow : Window
         {
             var psi = new ProcessStartInfo(fileName)
             {
-                RedirectStandardOutput = true,
+    private async Task ShowMessage(string title, string message, bool isError = false)
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
