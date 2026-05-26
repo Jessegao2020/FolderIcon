@@ -18,16 +18,12 @@
 
     <Border Grid.Row="1"
             Name="FolderDropZone"
-            Background="Transparent"
-            DragDrop.AllowDrop="True"
-            DragDrop.DragOver="OnFolderDragOver"
-            DragDrop.Drop="OnFolderDrop">
+            Background="Transparent">
       <TextBox Name="FolderPathBox"
                Height="96"
                TextWrapping="Wrap"
                AcceptsReturn="True"
                VerticalContentAlignment="Top"
-               IsHitTestVisible="False"
                TextChanged="OnFolderPathTextChanged"
                DragDrop.AllowDrop="True"
                DragDrop.DragOver="OnFolderDragOver"
@@ -47,8 +43,7 @@
             DragDrop.Drop="OnImageDrop">
       <Image Name="PreviewImage"
              Stretch="Uniform"
-             Margin="6"
-             IsHitTestVisible="False" />
+             Margin="6" />
     </Border>
 
     <Grid Grid.Row="4" ColumnDefinitions="Auto,*" Margin="0,16,0,0">

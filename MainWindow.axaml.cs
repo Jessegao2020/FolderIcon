@@ -86,11 +86,14 @@ public partial class MainWindow : Window
 
             var path = GetFirstDroppedPath(e);
             if (string.IsNullOrWhiteSpace(path))
+            {
+                await ShowMessage("提示", "未解析到有效拖拽路径。解析结果为空。", false);
                 return;
+            }
 
             if (!Directory.Exists(path))
             {
-                await ShowMessage("提示", "这里只能拖入文件夹。", false);
+                await ShowMessage("提示", $"这里只能拖入文件夹。\n解析路径：{path}", false);
                 return;
             }
 
@@ -158,16 +161,40 @@ public partial class MainWindow : Window
 
     private static string? GetFirstDroppedPath(DragEventArgs e)
     {
-        if (!e.Data.Contains(DataFormats.Files))
-            return null;
-
-        var files = e.Data.GetFiles();
-        if (files == null)
-            return null;
-
-        foreach (var file in files)
+        if (e.Data.Contains("text/uri-list"))
         {
-            return file.Path.LocalPath;
+            var uriList = e.Data.Get("text/uri-list") as string;
+            if (!string.IsNullOrWhiteSpace(uriList))
+            {
+                var firstLine = uriList
+                    .Split(new[] { '', '
+' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .FirstOrDefault(x => !x.StartsWith("#"));
+
+                if (!string.IsNullOrWhiteSpace(firstLine) && firstLine.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
+                {
+                    var rawPath = firstLine.Substring("file://".Length);
+                    if (rawPath.StartsWith("/"))
+                    {
+                        return Uri.UnescapeDataString(rawPath);
+                    }
+
+                    return Uri.UnescapeDataString("/" + rawPath);
+                }
+            }
+        }
+
+        if (e.Data.Contains(DataFormats.Files))
+        {
+            var files = e.Data.GetFiles();
+            if (files != null)
+            {
+                foreach (var file in files)
+                {
+                    return file.Path.LocalPath;
+                }
+            }
         }
 
         return null;
